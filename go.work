@@ -1,13 +1,13 @@
 go 1.22.1
 
 
-use ./userservice
+// use ./userservice
 
-use ./orderservice
+// use ./orderservice
 
-use ./productservice
+// use ./productservice
 
-use ./graphqlgateway
+// use ./graphqlgateway
 
 
-use .
+// use .
