@@ -3,6 +3,7 @@ module github.com/hari134/pratilipi/userservice
 go 1.22.1
 
 require (
+	github.com/hari134/pratilipi v0.0.0-20241002184518-60e6670c56f3
 	github.com/uptrace/bun v1.2.3
 	golang.org/x/crypto v0.26.0
 )
@@ -20,7 +21,6 @@ require (
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/mux v1.8.1
-	github.com/hari134/pratilipi v0.0.0-20241002184518-60e6670c56f3
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.4.0 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
