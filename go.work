@@ -1,15 +1,13 @@
-// go 1.22.5
+go 1.22.5
 
-// toolchain go1.22.8
+toolchain go1.22.8
 
-// use ./userservice
+use ./userservice
 
-// use ./orderservice
+use ./orderservice
 
-// use ./productservice
+use ./productservice
 
-// use ./graphqlgateway
+use ./graphqlgateway
 
-// use .
-
-go 1.22.1
+use .
