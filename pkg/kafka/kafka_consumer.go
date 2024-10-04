@@ -64,7 +64,8 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventName string, handler func(
 		// Dynamically create a new instance of the registered event type
 		eventInstance := reflect.New(eventType).Interface()
 		// Base64 decode the message value (msg.Value)
-		decodedValue, err := base64.StdEncoding.DecodeString(string(msg.Value))
+		log.Printf("base64------------------------")
+		decodedValue, err := base64.RawStdEncoding.DecodeString(string(msg.Value))
 		if err != nil {
 			log.Printf("Failed to decode base64 string: %v", err)
 			return err
