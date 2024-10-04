@@ -34,7 +34,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 		return nil, err
 	}
 	defer resp.Body.Close()
-
+	fmt.Println(resp)
 	var user model.User
 	err = json.NewDecoder(resp.Body).Decode(&user)
 	if err != nil {
