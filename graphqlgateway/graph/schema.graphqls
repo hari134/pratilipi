@@ -1,5 +1,3 @@
-# graph/schema.graphql
-
 type User {
     userID: ID!
     name: String!
