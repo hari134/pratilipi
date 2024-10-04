@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"reflect"
 
@@ -49,6 +50,7 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handle
         log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
         newEventStruct := reflect.New(reflect.TypeOf(eventStruct)).Interface()
         // Base64 decode and unmarshal the message into the event struct
+        fmt.Println(msg.Value)
         err = serde.Base64ToStruct(string(msg.Value), newEventStruct)
         if err != nil {
             log.Printf("Failed to decode and unmarshal message: %v", err)
