@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+
 	"github.com/hari134/pratilipi/graphqlgateway/graph/model"
 )
 
@@ -13,39 +15,77 @@ import (
 
 // Users is the resolver for the users query.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	// Fetch the users from the external service
 	resp, err := http.Get("http://userservice:8080/users")
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var users []*model.User
+	// Define a temporary struct to hold the data with userID as int64
+	var users []struct {
+		UserID       int64  `json:"userID"`
+		Name         string `json:"name"`
+		Email        string `json:"email"`
+	}
+
+	// Decode the response into the temporary struct
 	err = json.NewDecoder(resp.Body).Decode(&users)
 	if err != nil {
 		return nil, err
 	}
-	return users, nil
+
+	// Convert userID to string and map to GraphQL model
+	var gqlUsers []*model.User
+	for _, user := range users {
+		gqlUser := &model.User{
+			UserID: strconv.FormatInt(user.UserID, 10), // Convert userID from int64 to string
+			Name:   user.Name,
+			Email:  user.Email,
+		}
+		gqlUsers = append(gqlUsers, gqlUser)
+	}
+
+	// Return the list of users
+	return gqlUsers, nil
 }
 
 // User is the resolver for the user query.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
+	// Fetch the user by ID from the external service
 	resp, err := http.Get(fmt.Sprintf("http://userservice:8080/users/%s", id))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	fmt.Println(resp)
-	var user model.User
+
+	// Define a temporary struct to hold the data with userID as int64
+	var user struct {
+		UserID       int64  `json:"userID"`
+		Name         string `json:"name"`
+		Email        string `json:"email"`
+	}
+
+	// Decode the response into the temporary struct
 	err = json.NewDecoder(resp.Body).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	// Convert userID to string and map to GraphQL model
+	gqlUser := &model.User{
+		UserID: strconv.FormatInt(user.UserID, 10), // Convert userID from int64 to string
+		Name:   user.Name,
+		Email:  user.Email,
+	}
+
+	// Return the user
+	return gqlUser, nil
 }
 
 // Products is the resolver for the products query.
 func (r *queryResolver) Products(ctx context.Context) ([]*model.Product, error) {
-	resp, err := http.Get("http://productservice:8080/products")
+	resp, err := http.Get("http://productservice:8082/products")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +101,7 @@ func (r *queryResolver) Products(ctx context.Context) ([]*model.Product, error) 
 
 // Product is the resolver for the product query.
 func (r *queryResolver) Product(ctx context.Context, id string) (*model.Product, error) {
-	resp, err := http.Get(fmt.Sprintf("http://productservice:8080/products/%s", id))
+	resp, err := http.Get(fmt.Sprintf("http://productservice:8082/products/%s", id))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +117,7 @@ func (r *queryResolver) Product(ctx context.Context, id string) (*model.Product,
 
 // Orders is the resolver for the orders query.
 func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
-	resp, err := http.Get("http://orderservice:8080/orders")
+	resp, err := http.Get("http://orderservice:8083/orders")
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +133,7 @@ func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
 
 // Order is the resolver for the order query.
 func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, error) {
-	resp, err := http.Get(fmt.Sprintf("http://orderservice:8080/orders/%s", id))
+	resp, err := http.Get(fmt.Sprintf("http://orderservice:8083/orders/%s", id))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +177,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Produc
 		return nil, err
 	}
 
-	resp, err := http.Post("http://productservice:8080/products", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://productservice:8082/products", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +198,7 @@ func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.OrderInpu
 		return nil, err
 	}
 
-	resp, err := http.Post("http://orderservice:8080/orders", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://orderservice:8083/orders", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
