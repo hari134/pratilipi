@@ -1,6 +1,9 @@
 package kafka
 
 import (
+    "context"
+    "encoding/json"
+    "log"
     "github.com/segmentio/kafka-go"
 )
 
@@ -28,4 +31,44 @@ func NewKafkaConsumer(config *KafkaConfig) *KafkaConsumer {
     return &KafkaConsumer{
         Reader: kafka.NewReader(readerConfig),
     }
+}
+
+// Subscribe subscribes to a topic and processes messages using the provided handler.
+func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handler func(event interface{}) error) error {
+    log.Printf("Subscribing to topic: %s", topic)
+
+    for {
+        msg, err := kc.Reader.FetchMessage(context.Background())
+        if err != nil {
+            log.Printf("Failed to fetch message from topic %s: %v", topic, err)
+            return err
+        }
+
+        log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
+
+        // Unmarshal the message into the event struct
+        err = json.Unmarshal(msg.Value, eventStruct)
+        if err != nil {
+            log.Printf("Failed to unmarshal message: %v", err)
+            return err
+        }
+
+        // Call the event handler with the unmarshaled event
+        err = handler(eventStruct)
+        if err != nil {
+            log.Printf("Handler failed for topic %s: %v", topic, err)
+            return err
+        }
+
+        // Commit the message after processing
+        if err := kc.Reader.CommitMessages(context.Background(), msg); err != nil {
+            log.Printf("Failed to commit message: %v", err)
+            return err
+        }
+    }
+}
+
+// Close closes the Kafka consumer.
+func (kc *KafkaConsumer) Close() error {
+    return kc.Reader.Close()
 }
