@@ -33,7 +33,7 @@ func (cm *ConsumerManager) StartUserRegisteredConsumer(topic string) {
         return cm.handleUserRegistered(userRegistered)
     }
 
-    if err := cm.consumer.Subscribe(topic, &messaging.UserRegistered{}, handler); err != nil {
+    if err := cm.consumer.Subscribe(topic, "user-registered", handler); err != nil {
         log.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
     }
 }
@@ -73,7 +73,7 @@ func (cm *ConsumerManager) StartProductCreatedConsumer(topic string) {
         return cm.handleProductCreated(productCreated)
     }
 
-    if err := cm.consumer.Subscribe(topic, &messaging.ProductCreated{}, handler); err != nil {
+    if err := cm.consumer.Subscribe(topic, "product-created", handler); err != nil {
         log.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
     }
 }

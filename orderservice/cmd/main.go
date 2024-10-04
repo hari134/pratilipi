@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hari134/pratilipi/orderservice/api"
 	"github.com/hari134/pratilipi/orderservice/consumer" // Import consumer package
+	"github.com/hari134/pratilipi/pkg/messaging" // Import your message types
 	"github.com/hari134/pratilipi/orderservice/migrations"
 	"github.com/hari134/pratilipi/orderservice/producer"
 	"github.com/hari134/pratilipi/pkg/db"
@@ -16,7 +17,6 @@ import (
 )
 
 func main() {
-	// Initialize the database
 	// Load environment variables
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
@@ -50,7 +50,11 @@ func main() {
 		DB:       dbInstance,
 		Producer: producerManager,
 	}
+
+	// Run DB migrations
 	migrations.RunMigrations(dbInstance)
+
+	// Initialize Kafka consumer
 	kafkaConsumerConfig := kafka.NewKafkaConfig().
 		SetBrokers("kafka:9092").
 		SetGroupID("orderservice-group").
@@ -58,10 +62,16 @@ func main() {
 
 	kafkaConsumer := kafka.NewKafkaConsumer(kafkaConsumerConfig)
 
+	// Initialize ConsumerManager
 	consumerManager := consumer.NewConsumerManager(kafkaConsumer, dbInstance)
+
+	// Register event types for dynamic handling
+	kafkaConsumer.RegisterType("user-registered", &messaging.UserRegistered{})
+	kafkaConsumer.RegisterType("product-created", &messaging.ProductCreated{})
+
 	// Start listening to "User Registered" and "Product Created" events in separate goroutines
-	go consumerManager.StartUserRegisteredConsumer("user-registered")
 	go consumerManager.StartProductCreatedConsumer("product-created")
+	go consumerManager.StartUserRegisteredConsumer("user-registered")
 
 	// Set up HTTP routes
 	r := mux.NewRouter()

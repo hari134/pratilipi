@@ -34,7 +34,7 @@ func (cm *ConsumerManager) StartOrderPlacedConsumer(topic string) {
     }
 
     // Subscribe to the "order-placed" topic and process incoming events.
-    if err := cm.consumer.Subscribe(topic, &messaging.OrderPlaced{}, handler); err != nil {
+    if err := cm.consumer.Subscribe(topic,"order-placed", handler); err != nil {
         log.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
     }
 }
