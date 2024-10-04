@@ -66,6 +66,8 @@ func main() {
 
 	// Set up HTTP routes
 	r := mux.NewRouter()
+	r.HandleFunc("/products", productAPIHandler.GetProductsHandler).Methods("GET")
+	r.HandleFunc("/products/{product_id}", productAPIHandler.UpdateProductHandler).Methods("GET")    // Update product
 	r.HandleFunc("/products", productAPIHandler.CreateProductHandler).Methods("POST")
 	r.HandleFunc("/products/{product_id}", productAPIHandler.UpdateProductHandler).Methods("PUT")    // Update product
 	r.HandleFunc("/products/{product_id}", productAPIHandler.DeleteProductHandler).Methods("DELETE") // Delete product

@@ -62,6 +62,8 @@ func main() {
 	r.HandleFunc("/login", authAPIHandler.LoginHandler).Methods("POST")
 	r.HandleFunc("/validate-token", authAPIHandler.ValidateTokenHandler).Methods("POST")
 
+	r.HandleFunc("/users/{userID}", userAPIHandler.GetUserByIdHandler).Methods("GET")
+	r.HandleFunc("/users", userAPIHandler.GetUsersHandler).Methods("GET")
 	r.HandleFunc("/create-user", userAPIHandler.CreateUserHandler).Methods("POST")
 	r.Handle("/update-user", middleware.TokenValidationMiddleware(http.HandlerFunc(userAPIHandler.UpdateUserHandler))).Methods("PUT")
 

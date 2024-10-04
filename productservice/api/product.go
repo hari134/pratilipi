@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -162,4 +163,51 @@ func (h *ProductAPIHandler) UpdateInventoryHandler(w http.ResponseWriter, r *htt
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(product)
+}
+
+// GetProductByIdHandler handles HTTP GET requests to retrieve a product by ID.
+func (h *ProductAPIHandler) GetProductByIdHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the product ID from the URL parameters
+	vars := mux.Vars(r)
+	productIDStr := vars["productID"]
+
+	// Convert productID to int64
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch the product from the database
+	var product models.Product
+	ctx := context.Background()
+	err = h.DB.NewSelect().Model(&product).Where("product_id = ?", productID).Scan(ctx)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Product not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to retrieve product", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Return the product as JSON
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(product)
+}
+
+// GetProductsHandler handles HTTP GET requests to retrieve all products.
+func (h *ProductAPIHandler) GetProductsHandler(w http.ResponseWriter, r *http.Request) {
+	// Fetch all products from the database
+	var products []models.Product
+	ctx := context.Background()
+	err := h.DB.NewSelect().Model(&products).Scan(ctx)
+	if err != nil {
+		http.Error(w, "Failed to retrieve products", http.StatusInternalServerError)
+		return
+	}
+
+	// Return the list of products as JSON
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(products)
 }

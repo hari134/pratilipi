@@ -45,7 +45,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 
 // Products is the resolver for the products query.
 func (r *queryResolver) Products(ctx context.Context) ([]*model.Product, error) {
-	resp, err := http.Get("http://productservice:8082/products")
+	resp, err := http.Get("http://productservice:8080/products")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *queryResolver) Products(ctx context.Context) ([]*model.Product, error) 
 
 // Product is the resolver for the product query.
 func (r *queryResolver) Product(ctx context.Context, id string) (*model.Product, error) {
-	resp, err := http.Get(fmt.Sprintf("http://productservice:8082/products/%s", id))
+	resp, err := http.Get(fmt.Sprintf("http://productservice:8080/products/%s", id))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (r *queryResolver) Product(ctx context.Context, id string) (*model.Product,
 
 // Orders is the resolver for the orders query.
 func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
-	resp, err := http.Get("http://orderservice:8083/orders")
+	resp, err := http.Get("http://orderservice:8080/orders")
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
 
 // Order is the resolver for the order query.
 func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, error) {
-	resp, err := http.Get(fmt.Sprintf("http://orderservice:8083/orders/%s", id))
+	resp, err := http.Get(fmt.Sprintf("http://orderservice:8080/orders/%s", id))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Produc
 		return nil, err
 	}
 
-	resp, err := http.Post("http://productservice:8082/products", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://productservice:8080/products", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.OrderInpu
 		return nil, err
 	}
 
-	resp, err := http.Post("http://orderservice:8083/orders", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://orderservice:8080/orders", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
