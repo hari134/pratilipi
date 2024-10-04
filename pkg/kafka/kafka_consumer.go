@@ -2,11 +2,9 @@ package kafka
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"log"
-	"reflect"
 
-	"github.com/hari134/pratilipi/pkg/serde"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -46,19 +44,18 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handle
             log.Printf("Failed to fetch message from topic %s: %v", topic, err)
             return err
         }
-        log.Println("using reflect")
+
         log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
-        newEventStruct := reflect.New(reflect.TypeOf(eventStruct)).Interface()
-        // Base64 decode and unmarshal the message into the event struct
-        fmt.Println(msg.Value)
-        err = serde.Base64ToStruct(string(msg.Value), newEventStruct)
+
+        // Directly unmarshal the message into the event struct (no Base64 decoding)
+        err = json.Unmarshal(msg.Value, eventStruct)
         if err != nil {
-            log.Printf("Failed to decode and unmarshal message: %v", err)
+            log.Printf("Failed to unmarshal message: %v", err)
             return err
         }
 
         // Call the event handler with the unmarshaled event
-        err = handler(newEventStruct)
+        err = handler(eventStruct)
         if err != nil {
             log.Printf("Handler failed for topic %s: %v", topic, err)
             return err
@@ -71,6 +68,7 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handle
         }
     }
 }
+
 
 // Close closes the Kafka consumer.
 func (kc *KafkaConsumer) Close() error {

@@ -4,7 +4,7 @@ go 1.22.1
 
 require (
 	github.com/gorilla/mux v1.8.1
-	github.com/hari134/pratilipi v0.0.0-20241004115500-9846db174c49
+	github.com/hari134/pratilipi v0.0.0-20241004123035-fe2145ed1446
 	github.com/uptrace/bun v1.2.3
 )
 
