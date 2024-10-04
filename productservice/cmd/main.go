@@ -62,7 +62,7 @@ func main() {
 	consumerManager := consumer.NewConsumerManager(kafkaConsumer, dbInstance)
 
 	// Start listening to "Order Placed" events in a separate goroutine
-	go consumerManager.StartOrderPlacedConsumer("order-placed")
+	go consumerManager.StartConsumers("order-placed")
 
 	// Set up HTTP routes
 	r := mux.NewRouter()

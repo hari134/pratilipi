@@ -27,55 +27,36 @@ func NewConsumerManager(consumer messaging.Consumer, dbInstance *db.DB) *Consume
 // StartConsumers subscribes to the topics and processes different types of events.
 func (cm *ConsumerManager) StartConsumers(userRegisteredTopic string, productCreatedTopic string) {
 	// Subscribe to both topics with a unified handler
-	cm.subscribeToTopics([]string{userRegisteredTopic, productCreatedTopic})
-}
+	handlers := map[string]func(event interface{}) error{
+		userRegisteredTopic: cm.handleUserRegisteredEvent,
+		productCreatedTopic: cm.handleProductCreatedEvent,
+	}
 
-// subscribeToTopics handles events from multiple topics with a unified event handler.
-func (cm *ConsumerManager) subscribeToTopics(topics []string) {
-	for _, topic := range topics {
-		// Subscribe each topic with a common handler
-		go func(topic string) {
-			handler := func(event interface{}) error {
-				return cm.handleEvent(event, topic)
-			}
-
-			if err := cm.consumer.Subscribe(topic, topic, handler); err != nil {
-				log.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
-			}
-		}(topic)
+	err := cm.consumer.Subscribe(handlers)
+	if err != nil {
+		log.Fatalf("Failed to subscribe to topics: %v", err)
 	}
 }
 
-// handleEvent processes different event types using a switch case.
-func (cm *ConsumerManager) handleEvent(event interface{}, topic string) error {
-	switch e := event.(type) {
-	case *messaging.UserRegistered:
-		// Handle User Registered event
-		return cm.handleUserRegistered(e)
-	case *messaging.ProductCreated:
-		// Handle Product Created event
-		return cm.handleProductCreated(e)
-	default:
-		log.Printf("Received unknown event type on topic %s: %+v", topic, event)
-		// Optionally, handle unknown event types if necessary
-		return nil
-	}
-}
-
-// handleUserRegistered processes the "User Registered" event and updates the users table.
-func (cm *ConsumerManager) handleUserRegistered(event *messaging.UserRegistered) error {
+// handleUserRegisteredEvent handles events from the "User Registered" topic.
+func (cm *ConsumerManager) handleUserRegisteredEvent(event interface{}) error {
 	log.Printf("Processing UserRegistered event: %+v", event)
 
-	ctx := context.Background()
+	userRegistered, ok := event.(*messaging.UserRegistered)
+	if !ok {
+		log.Printf("Unexpected event type for UserRegistered event")
+		return nil
+	}
 
-	userIdInt, err := strconv.ParseInt(event.UserID, 10, 64)
+	ctx := context.Background()
+	userIdInt, err := strconv.ParseInt(userRegistered.UserID, 10, 64)
 	if err != nil {
 		return err
 	}
 	user := &models.User{
 		UserID:  userIdInt,
-		Email:   event.Email,
-		PhoneNo: event.PhoneNo,
+		Email:   userRegistered.Email,
+		PhoneNo: userRegistered.PhoneNo,
 	}
 
 	_, err = cm.DB.NewInsert().Model(user).Exec(ctx)
@@ -84,23 +65,29 @@ func (cm *ConsumerManager) handleUserRegistered(event *messaging.UserRegistered)
 		return err
 	}
 
-	log.Printf("User %s inserted successfully", event.Email)
+	log.Printf("User %s inserted successfully", userRegistered.Email)
 	return nil
 }
 
-// handleProductCreated processes the "Product Created" event and updates the products table.
-func (cm *ConsumerManager) handleProductCreated(event *messaging.ProductCreated) error {
+// handleProductCreatedEvent handles events from the "Product Created" topic.
+func (cm *ConsumerManager) handleProductCreatedEvent(event interface{}) error {
 	log.Printf("Processing ProductCreated event: %+v", event)
 
+	productCreated, ok := event.(*messaging.ProductCreated)
+	if !ok {
+		log.Printf("Unexpected event type for ProductCreated event")
+		return nil
+	}
+
 	ctx := context.Background()
-	productIdInt, err := strconv.ParseInt(event.ProductID, 10, 64)
+	productIdInt, err := strconv.ParseInt(productCreated.ProductID, 10, 64)
 	if err != nil {
 		return err
 	}
 	product := &models.Product{
 		ProductID:      productIdInt,
-		Price:          event.Price,
-		InventoryCount: event.InventoryCount,
+		Price:          productCreated.Price,
+		InventoryCount: productCreated.InventoryCount,
 	}
 
 	_, err = cm.DB.NewInsert().Model(product).Exec(ctx)
@@ -109,6 +96,6 @@ func (cm *ConsumerManager) handleProductCreated(event *messaging.ProductCreated)
 		return err
 	}
 
-	log.Printf("Product %s inserted successfully", event.Name)
+	log.Printf("Product %s inserted successfully", productCreated.Name)
 	return nil
 }

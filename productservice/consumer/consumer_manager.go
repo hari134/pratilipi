@@ -3,7 +3,6 @@ package consumer
 import (
     "context"
     "log"
-
     "github.com/hari134/pratilipi/pkg/db"
     "github.com/hari134/pratilipi/pkg/messaging"
     "github.com/hari134/pratilipi/productservice/models"
@@ -23,30 +22,33 @@ func NewConsumerManager(consumer messaging.Consumer, dbInstance *db.DB) *Consume
     }
 }
 
-// StartOrderPlacedConsumer listens for "Order Placed" events and updates product inventory.
-func (cm *ConsumerManager) StartOrderPlacedConsumer(topic string) {
-    log.Printf("Starting consumer for topic: %s", topic)
-
-    // Set up a handler function to process "Order Placed" events.
-    handler := func(event interface{}) error {
-        orderPlaced := event.(*messaging.OrderPlaced)
-        return cm.handleOrderPlaced(orderPlaced)
+// StartConsumers subscribes to the topics and processes different types of events.
+func (cm *ConsumerManager) StartConsumers(orderPlacedTopic string) {
+    // Subscribe to the "order-placed" topic with a unified handler.
+    handlers := map[string]func(event interface{}) error{
+        orderPlacedTopic: cm.handleOrderPlacedEvent,
     }
 
-    // Subscribe to the "order-placed" topic and process incoming events.
-    if err := cm.consumer.Subscribe(topic,"order-placed", handler); err != nil {
-        log.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
+    err := cm.consumer.Subscribe(handlers)
+    if err != nil {
+        log.Fatalf("Failed to subscribe to topics: %v", err)
     }
 }
 
-// handleOrderPlaced processes the "Order Placed" event and updates the inventory for each product.
-func (cm *ConsumerManager) handleOrderPlaced(event *messaging.OrderPlaced) error {
+// handleOrderPlacedEvent processes the "Order Placed" event and updates the inventory for each product.
+func (cm *ConsumerManager) handleOrderPlacedEvent(event interface{}) error {
     log.Printf("Processing OrderPlaced event: %+v", event)
+
+    orderPlaced, ok := event.(*messaging.OrderPlaced)
+    if !ok {
+        log.Printf("Unexpected event type for OrderPlaced event")
+        return nil
+    }
 
     ctx := context.Background()
 
     // Loop through each item in the order and update the product inventory.
-    for _, item := range event.Items {
+    for _, item := range orderPlaced.Items {
         product := &models.Product{}
         err := cm.DB.NewSelect().Model(product).Where("product_id = ?", item.ProductID).Scan(ctx)
         if err != nil {
@@ -57,7 +59,7 @@ func (cm *ConsumerManager) handleOrderPlaced(event *messaging.OrderPlaced) error
         // Check if there's enough inventory to fulfill the order.
         if product.InventoryCount < item.Quantity {
             log.Printf("Not enough inventory for product %d", item.ProductID)
-            return nil // Optionally, you could return an error here to handle this case.
+            return nil // Optionally, return an error here to handle this case.
         }
 
         // Deduct the quantity from the product's inventory.
