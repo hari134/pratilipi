@@ -66,8 +66,8 @@ func main() {
 	consumerManager := consumer.NewConsumerManager(kafkaConsumer, dbInstance)
 
 	// Register event types for dynamic handling
-	kafkaConsumer.RegisterType("user-registered", &messaging.UserRegistered{})
-	kafkaConsumer.RegisterType("product-created", &messaging.ProductCreated{})
+	kafkaConsumer.RegisterType("user-registered", messaging.UserRegistered{})
+	kafkaConsumer.RegisterType("product-created", messaging.ProductCreated{})
 
 	// Start listening to "User Registered" and "Product Created" events in separate goroutines
 
