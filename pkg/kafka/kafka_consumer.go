@@ -2,11 +2,12 @@ package kafka
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"log"
 	"reflect"
 
-	"github.com/hari134/pratilipi/pkg/messaging"
-	"github.com/hari134/pratilipi/pkg/serde"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -43,46 +44,60 @@ func (kc *KafkaConsumer) RegisterType(eventName string, eventType interface{}) {
 }
 
 func (kc *KafkaConsumer) Subscribe(topic string, eventName string, handler func(event interface{}) error) error {
-	log.Printf("Subscribing to topic: %s", topic)
+    log.Printf("Subscribing to topic: %s", topic)
 
-	for {
-		msg, err := kc.Reader.FetchMessage(context.Background())
-		if err != nil {
-			log.Printf("Failed to fetch message from topic %s: %v", topic, err)
-			return err
-		}
+    for {
+        msg, err := kc.Reader.FetchMessage(context.Background())
+        if err != nil {
+            log.Printf("Failed to fetch message from topic %s: %v", topic, err)
+            return err
+        }
 
-		log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
+        log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
 
-		// Check if the eventName exists in the TypeRegistry
-		// eventType, exists := kc.TypeRegistry[eventName]
-		// if !exists {
-		// 	return errors.New("event type not registered")
-		// }
+        // Step 1: Unmarshal the JSON string to extract the Base64 string
+        var base64Str string
+        err = json.Unmarshal(msg.Value, &base64Str)
+        if err != nil {
+            log.Printf("Failed to unmarshal JSON: %v", err)
+            return err
+        }
 
-		// Dynamically create a new instance of the registered event type
-		var eventInstance messaging.UserRegistered
-		// Unmarshal the message into the dynamically created event struct
-		err = serde.Base64ToStruct(string(msg.Value), &eventInstance)
-		if err != nil {
-			log.Printf("Failed to unmarshal message: %v", err)
-			return err
-		}
+        // Step 2: Base64 decode the extracted string
+        decodedValue, err := base64.StdEncoding.DecodeString(base64Str)
+        if err != nil {
+            log.Printf("Failed to decode base64 string: %v", err)
+            return err
+        }
 
-		// Call the event handler with the unmarshaled event
-		err = handler(eventInstance)
-		if err != nil {
-			log.Printf("Handler failed for topic %s: %v", topic, err)
-			return err
-		}
+        // Step 3: Unmarshal the decoded JSON into the event struct
+        eventType, exists := kc.TypeRegistry[eventName]
+        if !exists {
+            return fmt.Errorf("event type not registered: %s", eventName)
+        }
+        eventInstance := reflect.New(eventType).Interface()
 
-		// Commit the message after processing
-		if err := kc.Reader.CommitMessages(context.Background(), msg); err != nil {
-			log.Printf("Failed to commit message: %v", err)
-			return err
-		}
-	}
+        err = json.Unmarshal(decodedValue, eventInstance)
+        if err != nil {
+            log.Printf("Failed to unmarshal decoded JSON: %v", err)
+            return err
+        }
+
+        // Step 4: Call the event handler with the unmarshaled event
+        err = handler(eventInstance)
+        if err != nil {
+            log.Printf("Handler failed for topic %s: %v", topic, err)
+            return err
+        }
+
+        // Commit the message after processing
+        if err := kc.Reader.CommitMessages(context.Background(), msg); err != nil {
+            log.Printf("Failed to commit message: %v", err)
+            return err
+        }
+    }
 }
+
 
 // Close closes the Kafka consumer.
 func (kc *KafkaConsumer) Close() error {

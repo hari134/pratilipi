@@ -9,6 +9,8 @@ github.com/hari134/pratilipi v0.0.0-20241004172412-e02db48b3260 h1:O1wdZW8TMtm5q
 github.com/hari134/pratilipi v0.0.0-20241004172412-e02db48b3260/go.mod h1:JrbN9cmd3cRN8cmSDT3cjvSYR2qdoAsPGNV61b2+Mg4=
 github.com/hari134/pratilipi v0.0.0-20241004173154-03abf626e244 h1:ZiCVyhv7s1HGRtpNqXSa8D2u9DcREcthKTtn0couoi8=
 github.com/hari134/pratilipi v0.0.0-20241004173154-03abf626e244/go.mod h1:JrbN9cmd3cRN8cmSDT3cjvSYR2qdoAsPGNV61b2+Mg4=
+github.com/hari134/pratilipi v0.0.0-20241004173911-8fb1d3b9f7bc h1:w9lUR4KgV+R4LAfj/vJYq1ipR8/7M87dB2+2lF7YIHo=
+github.com/hari134/pratilipi v0.0.0-20241004173911-8fb1d3b9f7bc/go.mod h1:JrbN9cmd3cRN8cmSDT3cjvSYR2qdoAsPGNV61b2+Mg4=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/klauspost/compress v1.15.9/go.mod h1:PhcZ0MbTNciWF3rruxRgKxI5NkcHHrHUDtV4Yw2GlzU=
