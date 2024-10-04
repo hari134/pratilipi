@@ -13,7 +13,7 @@ import (
 
 // Users is the resolver for the users query.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	resp, err := http.Get("http://userservice:8081/users")
+	resp, err := http.Get("http://userservice:8080/users")
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 
 // User is the resolver for the user query.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	resp, err := http.Get(fmt.Sprintf("http://userservice:8081/users/%s", id))
+	resp, err := http.Get(fmt.Sprintf("http://userservice:8080/users/%s", id))
 	if err != nil {
 		return nil, err
 	}
