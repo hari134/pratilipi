@@ -2,9 +2,10 @@ package kafka
 
 // KafkaConfig holds the configuration for Kafka producer and consumer.
 type KafkaConfig struct {
-    Brokers []string
-    GroupID string
-    Topic   string
+    Brokers     []string   // List of Kafka brokers
+    GroupID     string     // Consumer group ID
+    Topic       string     // Single topic (optional)
+    GroupTopics []string   // Multiple topics for consumer groups
 }
 
 // NewKafkaConfig initializes a new KafkaConfig with default values.
@@ -27,3 +28,14 @@ func (kc *KafkaConfig) SetGroupID(groupID string) *KafkaConfig {
     return kc
 }
 
+// SetTopic sets a single topic for the Kafka config.
+func (kc *KafkaConfig) SetTopic(topic string) *KafkaConfig {
+    kc.Topic = topic
+    return kc
+}
+
+// SetGroupTopics sets multiple topics for the Kafka config.
+func (kc *KafkaConfig) SetGroupTopics(topics ...string) *KafkaConfig {
+    kc.GroupTopics = topics
+    return kc
+}

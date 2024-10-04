@@ -1,11 +1,10 @@
-version: '3.8'
 
 services:
-  # UserService container
   userservice:
     build:
       context: .
-      dockerfile: userservice.Dockerfile
+      dockerfile: Dockerfile
+      target: userservice
     container_name: userservice
     env_file:
       - ./userservice/.env  # Load environment variables from the .env file
@@ -17,11 +16,11 @@ services:
     networks:
       - backend
 
-  # ProductService container
   productservice:
     build:
       context: .
-      dockerfile: productservice.Dockerfile
+      dockerfile: Dockerfile
+      target: productservice
     container_name: productservice
     env_file:
       - ./productservice/.env  # Load environment variables from the .env file
@@ -33,11 +32,11 @@ services:
     networks:
       - backend
 
-  # OrderService container
   orderservice:
     build:
       context: .
-      dockerfile: orderservice.Dockerfile
+      dockerfile: Dockerfile
+      target: orderservice
     container_name: orderservice
     env_file:
       - ./orderservice/.env  # Load environment variables from the .env file
@@ -49,7 +48,6 @@ services:
     networks:
       - backend
 
-  # PostgreSQL container for UserService
   userservice_db:
     image: postgres:13
     container_name: userservice_db
@@ -64,7 +62,6 @@ services:
     networks:
       - backend
 
-  # PostgreSQL container for ProductService
   productservice_db:
     image: postgres:13
     container_name: productservice_db
@@ -79,7 +76,6 @@ services:
     networks:
       - backend
 
-  # PostgreSQL container for OrderService
   orderservice_db:
     image: postgres:13
     container_name: orderservice_db
@@ -94,7 +90,6 @@ services:
     networks:
       - backend
 
-  # Zookeeper container for Kafka
   zookeeper:
     image: zookeeper:3.7
     container_name: zookeeper
@@ -103,7 +98,6 @@ services:
     networks:
       - backend
 
-  # Apache Kafka container
   kafka:
     image: bitnami/kafka:latest
     container_name: kafka
@@ -135,12 +129,10 @@ services:
         # Start Kafka
         /opt/bitnami/scripts/kafka/run.sh
 
-# Volumes for persistent data
 volumes:
   userservice_db_data:
   productservice_db_data:
   orderservice_db_data:
 
-# Shared network for all containers
 networks:
   backend:
