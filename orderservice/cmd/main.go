@@ -70,8 +70,9 @@ func main() {
 	kafkaConsumer.RegisterType("product-created", &messaging.ProductCreated{})
 
 	// Start listening to "User Registered" and "Product Created" events in separate goroutines
-	go consumerManager.StartProductCreatedConsumer("product-created")
+
 	go consumerManager.StartUserRegisteredConsumer("user-registered")
+	go consumerManager.StartProductCreatedConsumer("product-created")
 
 	// Set up HTTP routes
 	r := mux.NewRouter()

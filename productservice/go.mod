@@ -4,7 +4,7 @@ go 1.22.1
 
 require (
 	github.com/gorilla/mux v1.8.1
-	github.com/hari134/pratilipi v0.0.0-20241004125345-3d562151664a
+	github.com/hari134/pratilipi v0.0.0-20241004155841-ac6b5d848c77
 	github.com/uptrace/bun v1.2.3
 )
 
@@ -20,7 +20,7 @@ require (
 	github.com/uptrace/bun/driver/pgdriver v1.2.3 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/crypto v0.28.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )
