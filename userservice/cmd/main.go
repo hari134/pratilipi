@@ -11,6 +11,7 @@ import (
 	"github.com/hari134/pratilipi/pkg/kafka"
 	"github.com/hari134/pratilipi/userservice/api"
 	"github.com/hari134/pratilipi/userservice/middleware"
+	"github.com/hari134/pratilipi/userservice/migrations"
 	"github.com/hari134/pratilipi/userservice/producer"
 )
 
@@ -22,7 +23,6 @@ func main() {
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
-	kafkaTopic := os.Getenv("KAFKA_TOPIC")
 	serverPort := os.Getenv("SERVER_PORT")
 
 	// Initialize the database using environment variables
@@ -38,8 +38,7 @@ func main() {
 
 	// Create Kafka configuration from environment variables
 	kafkaConfig := kafka.NewKafkaConfig().
-		SetBrokers(kafkaBrokers).
-		SetTopic(kafkaTopic)
+		SetBrokers(kafkaBrokers)
 
 	// Initialize Kafka producer with KafkaConfig
 	kafkaProducer := kafka.NewKafkaProducer(kafkaConfig)
@@ -57,7 +56,7 @@ func main() {
 	authAPIHandler := &api.AuthAPIHandler{
 		DB: dbInstance,
 	}
-
+	migrations.RunMigrations(dbInstance)
 	// Set up HTTP router
 	r := mux.NewRouter()
 	r.HandleFunc("/login", authAPIHandler.LoginHandler).Methods("POST")

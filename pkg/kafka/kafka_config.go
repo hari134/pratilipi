@@ -12,7 +12,6 @@ func NewKafkaConfig() *KafkaConfig {
     return &KafkaConfig{
         Brokers: []string{"localhost:9092"}, // Default brokers
         GroupID: "default-group",            // Default group ID
-        Topic:   "default-topic",            // Default topic
     }
 }
 
@@ -28,8 +27,3 @@ func (kc *KafkaConfig) SetGroupID(groupID string) *KafkaConfig {
     return kc
 }
 
-// SetTopic sets the topic for the Kafka config.
-func (kc *KafkaConfig) SetTopic(topic string) *KafkaConfig {
-    kc.Topic = topic
-    return kc
-}

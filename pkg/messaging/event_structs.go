@@ -19,26 +19,29 @@ type UserProfileUpdated struct {
 }
 
 type ProductCreated struct {
-	ProductID string  `json:"product_id"`
-	Name      string  `json:"name"`
-	Price     float64 `json:"price"`
-	Stock     int     `json:"stock"`
+	ProductID      string  `json:"product_id"`
+	Name           string  `json:"name"`
+	Price          float64 `json:"price"`
+	InventoryCount int     `json:"inventory_count"`
 }
 
 // ProductInventoryUpdated represents the event when product inventory is updated.
 type ProductInventoryUpdated struct {
-	ProductID string `json:"product_id"`
-	Stock     int    `json:"stock"`
+	ProductID      string `json:"product_id"`
+	InventoryCount int    `json:"inventory_count"`
 }
 
-// OrderPlaced event is emitted when a user places an order.
+// OrderPlaced represents the event for an order that has been placed.
 type OrderPlaced struct {
-	OrderID     string    `json:"order_id"`
-	UserID      string    `json:"user_id"`
-	ProductID   string    `json:"product_id"`
-	Quantity    int       `json:"quantity"`
-	TotalAmount float64   `json:"total_amount"`
-	PlacedAt    time.Time `json:"placed_at"`
+    OrderID int64 `json:"order_id"`
+    UserID  int64 `json:"user_id"`
+    Items   []OrderItem `json:"items"`
+}
+
+// OrderItem represents a single item in an order.
+type OrderItem struct {
+    ProductID int64 `json:"product_id"`
+    Quantity  int   `json:"quantity"`
 }
 
 // OrderShipped event is emitted when an order is shipped.

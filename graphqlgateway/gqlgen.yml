@@ -1,0 +1,23 @@
+schema:
+  - graph/schema.graphql  # Path to your GraphQL schema file
+
+exec:
+  filename: graph/generated.go  # Where the generated executable code will be written
+  package: graph                # Package where the generated code will live
+
+model:
+  filename: graph/models.go     # File where the generated models will go
+  package: graph                # Package for the models
+
+resolver:
+  layout: follow-schema         # Follow the schema structure for resolvers
+  dir: graph          # Directory for your custom resolvers
+  package: graph                # Package for the resolvers
+
+models:
+  User:
+    model: github.com/hari134/pratilipi/graphqlgateway/graph/model.User  # Path to the User model
+  Product:
+    model: github.com/hari134/pratilipi/graphqlgateway/graph/model.Product  # Path to the Product model
+  Order:
+    model: github.com/hari134/pratilipi/graphqlgateway/graph/model.Order   # Path to the Order model

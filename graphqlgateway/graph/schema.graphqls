@@ -1,0 +1,65 @@
+# graph/schema.graphql
+
+type User {
+    userID: ID!
+    name: String!
+    email: String!
+}
+
+type Product {
+    productID: ID!
+    name: String!
+    price: Float!
+    inventoryCount: Int!
+}
+
+type Order {
+    orderID: ID!
+    userID: ID!
+    items: [OrderItem!]!
+    totalPrice: Float!
+    status: String!
+    placedAt: String!
+}
+
+type OrderItem {
+    productID: ID!
+    quantity: Int!
+}
+
+type Query {
+    users: [User!]!
+    user(id: ID!): User
+    products: [Product!]!
+    product(id: ID!): Product
+    orders: [Order!]!
+    order(id: ID!): Order
+}
+
+input RegisterInput {
+    name: String!
+    email: String!
+    password: String!
+}
+
+input ProductInput {
+    name: String!
+    price: Float!
+    inventoryCount: Int!
+}
+
+input OrderInput {
+    userID: ID!
+    items: [OrderItemInput!]!
+}
+
+input OrderItemInput {
+    productID: ID!
+    quantity: Int!
+}
+
+type Mutation {
+    registerUser(input: RegisterInput!): User
+    createProduct(input: ProductInput!): Product
+    placeOrder(input: OrderInput!): Order
+}

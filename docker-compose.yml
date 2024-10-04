@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # UserService container
+  userservice:
+    build:
+      context: .
+      dockerfile: userservice.Dockerfile
+    container_name: userservice
+    env_file:
+      - ./userservice/.env  # Load environment variables from the .env file
+    depends_on:
+      - userservice_db
+      - kafka
+    ports:
+      - "8081:8080"  # Expose UserService on port 8081
+    networks:
+      - backend
+
+  # ProductService container
+  productservice:
+    build:
+      context: .
+      dockerfile: productservice.Dockerfile
+    container_name: productservice
+    env_file:
+      - ./productservice/.env  # Load environment variables from the .env file
+    depends_on:
+      - productservice_db
+      - kafka
+    ports:
+      - "8082:8080"  # Expose ProductService on port 8082
+    networks:
+      - backend
+
+  # OrderService container
+  orderservice:
+    build:
+      context: .
+      dockerfile: orderservice.Dockerfile
+    container_name: orderservice
+    env_file:
+      - ./orderservice/.env  # Load environment variables from the .env file
+    depends_on:
+      - orderservice_db
+      - kafka
+    ports:
+      - "8083:8080"  # Expose OrderService on port 8083
+    networks:
+      - backend
+
+  # PostgreSQL container for UserService
+  userservice_db:
+    image: postgres:13
+    container_name: userservice_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: userservice_db
+    ports:
+      - "5433:5432"  # Expose the UserService DB on port 5433
+    volumes:
+      - userservice_db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # PostgreSQL container for ProductService
+  productservice_db:
+    image: postgres:13
+    container_name: productservice_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: productservice_db
+    ports:
+      - "5434:5432"  # Expose the ProductService DB on port 5434
+    volumes:
+      - productservice_db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # PostgreSQL container for OrderService
+  orderservice_db:
+    image: postgres:13
+    container_name: orderservice_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orderservice_db
+    ports:
+      - "5435:5432"  # Expose the OrderService DB on port 5435
+    volumes:
+      - orderservice_db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  # Zookeeper container for Kafka
+  zookeeper:
+    image: zookeeper:3.7
+    container_name: zookeeper
+    ports:
+      - "2181:2181"  # Expose Zookeeper on port 2181
+    networks:
+      - backend
+
+  # Apache Kafka container
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"  # Expose Kafka on port 9092
+    networks:
+      - backend
+    command:
+      - sh
+      - -c
+      - |
+        # Wait for Kafka to start before creating topics
+        sleep 10;
+        # Create topics
+        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic user-registered;
+        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic user-profile-updated;
+        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic product-created;
+        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic inventory-updated;
+        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic order-placed;
+        # Start Kafka
+        /opt/bitnami/scripts/kafka/run.sh
+
+# Volumes for persistent data
+volumes:
+  userservice_db_data:
+  productservice_db_data:
+  orderservice_db_data:
+
+# Shared network for all containers
+networks:
+  backend:

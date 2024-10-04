@@ -18,7 +18,6 @@ func NewKafkaProducer(config *KafkaConfig) messaging.Producer {
     return &KafkaProducer{
         Writer: kafka.NewWriter(kafka.WriterConfig{
             Brokers: config.Brokers,        // Use brokers from config
-            Topic:   config.Topic,          // Use topic from config
             Balancer: &kafka.LeastBytes{},
         }),
     }

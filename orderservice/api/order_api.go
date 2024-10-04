@@ -4,17 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
-	"log"
 
+	"github.com/gorilla/mux"
 	"github.com/hari134/pratilipi/orderservice/models"
+	"github.com/hari134/pratilipi/orderservice/producer"
 	"github.com/hari134/pratilipi/pkg/db"
+	"github.com/hari134/pratilipi/pkg/messaging"
 )
 
 // OrderHandler handles order-related API requests.
 type OrderHandler struct {
-	DB *db.DB  // Injected database dependency
+	DB       *db.DB
+	Producer *producer.ProducerManager
 }
 
 // OrderRequest represents the payload for placing an order.
@@ -23,9 +27,9 @@ type OrderRequest struct {
 	Items  []OrderItemData `json:"items"`
 }
 
-// OrderItemData represents an individual item in the order.
+// OrderItemData represents an individual item in the order request.
 type OrderItemData struct {
-	ProductID    string  `json:"product_id"`
+	ProductID    int64   `json:"product_id"`
 	Quantity     int     `json:"quantity"`
 	PriceAtOrder float64 `json:"price_at_order"`
 }
@@ -54,21 +58,21 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 		var product models.Product
 		err := h.DB.NewSelect().Model(&product).Where("product_id = ?", item.ProductID).Scan(ctx)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Product %s not found", item.ProductID), http.StatusNotFound)
+			http.Error(w, fmt.Sprintf("Product %d not found", item.ProductID), http.StatusNotFound)
 			return
 		}
 
 		// Check if enough stock is available
-		if product.Stock < item.Quantity {
-			http.Error(w, fmt.Sprintf("Insufficient stock for product %s. Available: %d, Requested: %d",
-				product.ProductID, product.Stock, item.Quantity), http.StatusBadRequest)
+		if product.InventoryCount < item.Quantity {
+			http.Error(w, fmt.Sprintf("Insufficient stock for product %d. Available: %d, Requested: %d",
+				product.ProductID, product.InventoryCount, item.Quantity), http.StatusBadRequest)
 			return
 		}
 	}
 
 	// Create the order in the orders table
 	order := &models.Order{
-		UserID:    orderReq.UserID,
+		UserID:    user.UserID,
 		TotalPrice: calculateTotalPrice(orderReq.Items), // Calculate total price from items
 		Status:     "placed",
 		PlacedAt:   time.Now(),
@@ -83,13 +87,13 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Create order items in the order_items table
+	var eventItems []messaging.OrderItem
 	for _, item := range orderReq.Items {
 		orderItem := &models.OrderItem{
 			OrderID:      order.OrderID,  // Reference the order just created
 			ProductID:    item.ProductID,
 			Quantity:     item.Quantity,
 			PriceAtOrder: item.PriceAtOrder,
-			StockAtOrder: getStockForProduct(item.ProductID, h.DB), // Get stock at the time of order placement
 		}
 
 		_, err := h.DB.NewInsert().Model(orderItem).Exec(ctx)
@@ -98,11 +102,97 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Failed to create order items", http.StatusInternalServerError)
 			return
 		}
+
+		// Collect items for the event
+		eventItems = append(eventItems, messaging.OrderItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		})
+
+		// Update the product stock
+		product := &models.Product{
+			ProductID: item.ProductID,
+		}
+		_, err = h.DB.NewUpdate().
+			Model(product).
+			Set("inventory_count = inventory_count - ?", item.Quantity).
+			Where("product_id = ?", item.ProductID).
+			Exec(ctx)
+		if err != nil {
+			log.Printf("Failed to update product stock: %v", err)
+			http.Error(w, "Failed to update product stock", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Emit "Order Placed" event
+	orderPlacedEvent := &messaging.OrderPlaced{
+		OrderID:    order.OrderID,
+		UserID:     order.UserID,
+		Items:      eventItems,
+	}
+	err = h.Producer.EmitOrderPlacedEvent(orderPlacedEvent)
+	if err != nil {
+		log.Printf("Failed to emit OrderPlaced event: %v", err)
+		http.Error(w, "Failed to emit OrderPlaced event", http.StatusInternalServerError)
+		return
 	}
 
 	// Return success response
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(order)
+}
+
+// GetAllOrdersHandler handles the HTTP GET request to retrieve all orders.
+func (h *OrderHandler) GetAllOrdersHandler(w http.ResponseWriter, r *http.Request) {
+    ctx := context.Background()
+    var orders []models.Order
+
+    // Fetch all orders from the database
+    err := h.DB.NewSelect().Model(&orders).Order("placed_at DESC").Scan(ctx)
+    if err != nil {
+        log.Printf("Failed to retrieve orders: %v", err)
+        http.Error(w, "Failed to retrieve orders", http.StatusInternalServerError)
+        return
+    }
+
+    // Return the list of orders
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(orders)
+}
+
+// GetOrderByIDHandler handles the HTTP GET request to retrieve a specific order by its ID.
+func (h *OrderHandler) GetOrderByIDHandler(w http.ResponseWriter, r *http.Request) {
+    ctx := context.Background()
+    vars := mux.Vars(r)
+    orderID := vars["order_id"]
+
+    var order models.Order
+    // Fetch the order by ID from the database
+    err := h.DB.NewSelect().Model(&order).Where("order_id = ?", orderID).Scan(ctx)
+    if err != nil {
+        log.Printf("Failed to retrieve order with ID %s: %v", orderID, err)
+        http.Error(w, "Order not found", http.StatusNotFound)
+        return
+    }
+
+    // Fetch the associated order items
+    var orderItems []models.OrderItem
+    err = h.DB.NewSelect().Model(&orderItems).Where("order_id = ?", order.OrderID).Scan(ctx)
+    if err != nil {
+        log.Printf("Failed to retrieve items for order with ID %s: %v", orderID, err)
+        http.Error(w, "Failed to retrieve order items", http.StatusInternalServerError)
+        return
+    }
+
+    // Return the order with its items
+    response := map[string]interface{}{
+        "order":       order,
+        "order_items": orderItems,
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
 }
 
 // calculateTotalPrice calculates the total price of the order based on the items.
@@ -112,15 +202,4 @@ func calculateTotalPrice(items []OrderItemData) float64 {
 		totalPrice += item.PriceAtOrder * float64(item.Quantity)
 	}
 	return totalPrice
-}
-
-// getStockForProduct retrieves the stock of the product from the database.
-func getStockForProduct(productID string, db *db.DB) int {
-	ctx := context.Background()
-	var product models.Product
-	err := db.NewSelect().Model(&product).Where("product_id = ?", productID).Scan(ctx)
-	if err != nil {
-		return 0
-	}
-	return product.Stock
 }

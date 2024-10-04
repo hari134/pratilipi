@@ -10,7 +10,7 @@ type User struct {
 
 	UserID       int64     `bun:"user_id,pk,autoincrement"`  // Primary key
 	Name         string    `bun:"name,notnull"`              // User's name
-	PhoneNo      string    `bun:"phoneNo,notnull"`           // User's phone number
+	PhoneNo      string    `bun:"phone_no,notnull"`           // User's phone number
 	Email        string    `bun:"email,unique,notnull"`      // Unique email address
 	PasswordHash string    `bun:"password_hash,notnull"`     // Hashed password for authentication
 	Role         string    `bun:"role,default:'user'"`       // Role: 'admin' or 'user', defaults to 'user'
