@@ -3,7 +3,7 @@ module github.com/hari134/pratilipi/userservice
 go 1.22.1
 
 require (
-	github.com/hari134/pratilipi v0.0.0-20241004082511-88566606fb7b
+	github.com/hari134/pratilipi v0.0.0-20241004114004-cbfe0e459385
 	github.com/uptrace/bun v1.2.3
 	golang.org/x/crypto v0.27.0
 )
@@ -13,10 +13,8 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/segmentio/kafka-go v0.4.47 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/uptrace/bun/dialect/pgdialect v1.2.3 // indirect
 	github.com/uptrace/bun/driver/pgdriver v1.2.3 // indirect
-	golang.org/x/net v0.29.0 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )
 

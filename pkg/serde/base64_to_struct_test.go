@@ -16,7 +16,7 @@ func TestBase64ToStruct(t *testing.T) {
 		PhoneNo: "1234567891",
 	}
 
-	var actual messaging.UserRegistered
+	var actual interface{}
 	err := Base64ToStruct(base64Str, &actual)
 	if err != nil {
 		t.Fatalf("Base64ToStruct failed: %v", err)

@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"log"
+	"reflect"
 
 	"github.com/hari134/pratilipi/pkg/serde"
 	"github.com/segmentio/kafka-go"
@@ -44,18 +45,18 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handle
             log.Printf("Failed to fetch message from topic %s: %v", topic, err)
             return err
         }
-
+        log.Println("using reflect")
         log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
-
+        newEventStruct := reflect.New(reflect.TypeOf(eventStruct)).Interface()
         // Base64 decode and unmarshal the message into the event struct
-        err = serde.Base64ToStruct(string(msg.Value), eventStruct)
+        err = serde.Base64ToStruct(string(msg.Value), newEventStruct)
         if err != nil {
             log.Printf("Failed to decode and unmarshal message: %v", err)
             return err
         }
 
         // Call the event handler with the unmarshaled event
-        err = handler(eventStruct)
+        err = handler(newEventStruct)
         if err != nil {
             log.Printf("Handler failed for topic %s: %v", topic, err)
             return err
