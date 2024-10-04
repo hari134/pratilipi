@@ -61,14 +61,9 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventName string, handler func(
 		// }
 
 		// Dynamically create a new instance of the registered event type
-		var eventInstance *messaging.UserRegistered
-		// Base64 decode the message value (msg.Value)
-		if err != nil {
-			log.Printf("Failed to decode base64 string: %v", err)
-			return err
-		}
+		var eventInstance messaging.UserRegistered
 		// Unmarshal the message into the dynamically created event struct
-		err = json.Unmarshal(msg.Value, eventInstance)
+		err = json.Unmarshal(msg.Value, &eventInstance)
 		if err != nil {
 			log.Printf("Failed to unmarshal message: %v", err)
 			return err
