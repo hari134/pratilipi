@@ -2,12 +2,11 @@ package kafka
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"log"
 	"reflect"
 
+	"github.com/hari134/pratilipi/pkg/messaging"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -56,22 +55,20 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventName string, handler func(
 		log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
 
 		// Check if the eventName exists in the TypeRegistry
-		eventType, exists := kc.TypeRegistry[eventName]
-		if !exists {
-			return errors.New("event type not registered")
-		}
+		// eventType, exists := kc.TypeRegistry[eventName]
+		// if !exists {
+		// 	return errors.New("event type not registered")
+		// }
 
 		// Dynamically create a new instance of the registered event type
-		eventInstance := reflect.New(eventType).Interface()
+		var eventInstance messaging.UserRegistered
 		// Base64 decode the message value (msg.Value)
-		log.Printf("base64------------------------")
-		decodedValue, err := base64.RawStdEncoding.DecodeString(string(msg.Value))
 		if err != nil {
 			log.Printf("Failed to decode base64 string: %v", err)
 			return err
 		}
 		// Unmarshal the message into the dynamically created event struct
-		err = json.Unmarshal(decodedValue, eventInstance)
+		err = json.Unmarshal(msg.Value, eventInstance)
 		if err != nil {
 			log.Printf("Failed to unmarshal message: %v", err)
 			return err
