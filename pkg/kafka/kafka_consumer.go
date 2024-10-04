@@ -1,10 +1,13 @@
 package kafka
 
 import (
-    "context"
-    "encoding/json"
-    "log"
-    "github.com/segmentio/kafka-go"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/segmentio/kafka-go"
 )
 
 // KafkaConsumer implements the Consumer interface for Kafka.
@@ -46,10 +49,10 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handle
 
         log.Printf("Message received from topic %s: %s", topic, string(msg.Value))
 
-        // Unmarshal the message into the event struct
-        err = json.Unmarshal(msg.Value, eventStruct)
+        // Base64 decode and unmarshal the message into the event struct
+        err = Base64ToStruct(string(msg.Value), eventStruct)
         if err != nil {
-            log.Printf("Failed to unmarshal message: %v", err)
+            log.Printf("Failed to decode and unmarshal message: %v", err)
             return err
         }
 
@@ -71,4 +74,21 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventStruct interface{}, handle
 // Close closes the Kafka consumer.
 func (kc *KafkaConsumer) Close() error {
     return kc.Reader.Close()
+}
+
+// Base64ToStruct decodes a base64 string and unmarshals it into the provided struct
+func Base64ToStruct(base64Str string, v interface{}) error {
+    // Decode the base64 string
+    decodedData, err := base64.StdEncoding.DecodeString(base64Str)
+    if err != nil {
+        return fmt.Errorf("failed to decode base64 string: %w", err)
+    }
+
+    // Unmarshal the JSON into the provided struct
+    err = json.Unmarshal(decodedData, v)
+    if err != nil {
+        return fmt.Errorf("failed to unmarshal JSON: %w", err)
+    }
+
+    return nil
 }

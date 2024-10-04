@@ -13,8 +13,10 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/segmentio/kafka-go v0.4.47 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/uptrace/bun/dialect/pgdialect v1.2.3 // indirect
 	github.com/uptrace/bun/driver/pgdriver v1.2.3 // indirect
+	golang.org/x/net v0.29.0 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )
 
@@ -22,7 +24,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/joho/godotenv v1.5.1
 	github.com/puzpuzpuz/xsync/v3 v3.4.0 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect

@@ -1,4 +1,4 @@
-
+version: "3"
 services:
   userservice:
     build:
@@ -7,12 +7,11 @@ services:
       target: userservice
     container_name: userservice
     env_file:
-      - ./userservice/.env  # Load environment variables from the .env file
+      - ./userservice/.env
     depends_on:
       - userservice_db
-      - kafka
     ports:
-      - "8081:8080"  # Expose UserService on port 8081
+      - "8081:8080"
     networks:
       - backend
 
@@ -23,12 +22,11 @@ services:
       target: productservice
     container_name: productservice
     env_file:
-      - ./productservice/.env  # Load environment variables from the .env file
+      - ./productservice/.env
     depends_on:
       - productservice_db
-      - kafka
     ports:
-      - "8082:8080"  # Expose ProductService on port 8082
+      - "8082:8080"
     networks:
       - backend
 
@@ -39,12 +37,11 @@ services:
       target: orderservice
     container_name: orderservice
     env_file:
-      - ./orderservice/.env  # Load environment variables from the .env file
+      - ./orderservice/.env
     depends_on:
       - orderservice_db
-      - kafka
     ports:
-      - "8083:8080"  # Expose OrderService on port 8083
+      - "8083:8080"
     networks:
       - backend
 
@@ -56,7 +53,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: userservice_db
     ports:
-      - "5433:5432"  # Expose the UserService DB on port 5433
+      - "5433:5432"
     volumes:
       - userservice_db_data:/var/lib/postgresql/data
     networks:
@@ -70,7 +67,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: productservice_db
     ports:
-      - "5434:5432"  # Expose the ProductService DB on port 5434
+      - "5434:5432"
     volumes:
       - productservice_db_data:/var/lib/postgresql/data
     networks:
@@ -84,17 +81,19 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: orderservice_db
     ports:
-      - "5435:5432"  # Expose the OrderService DB on port 5435
+      - "5435:5432"
     volumes:
       - orderservice_db_data:/var/lib/postgresql/data
     networks:
       - backend
 
   zookeeper:
-    image: zookeeper:3.7
+    image: bitnami/zookeeper:latest
     container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
-      - "2181:2181"  # Expose Zookeeper on port 2181
+      - "2181:2181"
     networks:
       - backend
 
@@ -104,30 +103,33 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       ALLOW_PLAINTEXT_LISTENER: "yes"
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"  # Expose Kafka on port 9092
+      - "9092:9092"
     networks:
       - backend
-    command:
-      - sh
-      - -c
-      - |
-        # Wait for Kafka to start before creating topics
-        sleep 10;
-        # Create topics
-        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic user-registered;
-        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic user-profile-updated;
-        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic product-created;
-        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic inventory-updated;
-        kafka-topics.sh --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic order-placed;
-        # Start Kafka
-        /opt/bitnami/scripts/kafka/run.sh
+    # healthcheck:
+    #   test: ["CMD-SHELL", "kafka-topics.sh --list --bootstrap-server localhost:9092 || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    # command:
+    #   - sh
+    #   - -c
+    #   - |
+    #     sleep 30
+    #     kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic user-registered
+    #     kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic user-profile-updated
+    #     kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic product-created
+    #     kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic inventory-updated
+    #     kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-placed
+    #     /opt/bitnami/scripts/kafka/run.sh
 
 volumes:
   userservice_db_data:
@@ -136,3 +138,4 @@ volumes:
 
 networks:
   backend:
+    driver: bridge

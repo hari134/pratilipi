@@ -1,4 +1,0 @@
-1. Run migratin functions for orderservice, productservice
-2. Test api's in orderservice, productservice, userservice by dockerizing and adding topics
-3. Understand how graphql works and make graphql service
-4. Try to build the services from code instead of binary

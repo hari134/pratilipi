@@ -11,3 +11,5 @@
 // use ./graphqlgateway
 
 // use .
+
+go 1.22.1
