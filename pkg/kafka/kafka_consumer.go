@@ -2,11 +2,11 @@ package kafka
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"reflect"
 
 	"github.com/hari134/pratilipi/pkg/messaging"
+	"github.com/hari134/pratilipi/pkg/serde"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -63,7 +63,7 @@ func (kc *KafkaConsumer) Subscribe(topic string, eventName string, handler func(
 		// Dynamically create a new instance of the registered event type
 		var eventInstance messaging.UserRegistered
 		// Unmarshal the message into the dynamically created event struct
-		err = json.Unmarshal(msg.Value, &eventInstance)
+		err = serde.Base64ToStruct(string(msg.Value), &eventInstance)
 		if err != nil {
 			log.Printf("Failed to unmarshal message: %v", err)
 			return err

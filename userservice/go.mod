@@ -3,7 +3,7 @@ module github.com/hari134/pratilipi/userservice
 go 1.22.1
 
 require (
-	github.com/hari134/pratilipi v0.0.0-20241004172412-e02db48b3260
+	github.com/hari134/pratilipi v0.0.0-20241004173154-03abf626e244
 	github.com/uptrace/bun v1.2.3
 	golang.org/x/crypto v0.28.0
 )
