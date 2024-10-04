@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"sync"
 
 	"github.com/hari134/pratilipi/orderservice/models"
 	"github.com/hari134/pratilipi/pkg/db"
@@ -22,6 +23,27 @@ func NewConsumerManager(consumer messaging.Consumer, dbInstance *db.DB) *Consume
         consumer: consumer,
         DB:       dbInstance,
     }
+}
+
+// StartConsumers starts the consumers for the "User Registered" and "Product Created" events concurrently.
+func (cm *ConsumerManager) StartConsumers(userRegisteredTopic string, productCreatedTopic string) {
+    var wg sync.WaitGroup
+    wg.Add(2)
+
+    // Start the User Registered consumer in a goroutine
+    go func() {
+        defer wg.Done()
+        cm.StartUserRegisteredConsumer(userRegisteredTopic)
+    }()
+
+    // Start the Product Created consumer in another goroutine
+    go func() {
+        defer wg.Done()
+        cm.StartProductCreatedConsumer(productCreatedTopic)
+    }()
+
+    // Wait for both consumers to finish (if they are not infinite loops)
+    wg.Wait()
 }
 
 // StartUserRegisteredConsumer listens for the "User Registered" event and updates the users table.
@@ -44,8 +66,8 @@ func (cm *ConsumerManager) handleUserRegistered(event *messaging.UserRegistered)
 
     ctx := context.Background()
 
-    userIdInt , err := strconv.ParseInt(event.UserID,10,64)
-    if err != nil{
+    userIdInt, err := strconv.ParseInt(event.UserID, 10, 64)
+    if err != nil {
         return err
     }
     user := &models.User{
@@ -83,8 +105,8 @@ func (cm *ConsumerManager) handleProductCreated(event *messaging.ProductCreated)
     log.Printf("Processing ProductCreated event: %+v", event)
 
     ctx := context.Background()
-    productIdInt , err := strconv.ParseInt(event.ProductID,10,64)
-    if err != nil{
+    productIdInt, err := strconv.ParseInt(event.ProductID, 10, 64)
+    if err != nil {
         return err
     }
     product := &models.Product{
