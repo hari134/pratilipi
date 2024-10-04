@@ -45,6 +45,22 @@ services:
     networks:
       - backend
 
+
+  graphqlgateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: graphqlgateway
+    container_name: graphqlgateway
+    depends_on:
+      - orderservice
+      - productservice
+      - userservice
+    ports:
+      - "8084:8080"
+    networks:
+      - backend
+
   userservice_db:
     image: postgres:13
     container_name: userservice_db

@@ -9,3 +9,5 @@ use ./orderservice
 
 use ./productservice
 
+use ./graphqlgateway
+

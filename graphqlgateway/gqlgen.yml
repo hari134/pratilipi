@@ -11,8 +11,8 @@ model:
 
 resolver:
   layout: follow-schema         # Follow the schema structure for resolvers
-  dir: graph          # Directory for your custom resolvers
-  package: graph                # Package for the resolvers
+  dir: graph/resolvers          # Directory for your custom resolvers
+  package: resolvers
 
 models:
   User:
@@ -21,3 +21,6 @@ models:
     model: github.com/hari134/pratilipi/graphqlgateway/graph/model.Product  # Path to the Product model
   Order:
     model: github.com/hari134/pratilipi/graphqlgateway/graph/model.Order   # Path to the Order model
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.IntID

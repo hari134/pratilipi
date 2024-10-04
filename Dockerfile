@@ -11,6 +11,7 @@ COPY go.work.docker ./go.work
 COPY userservice ./userservice
 COPY orderservice ./orderservice
 COPY productservice ./productservice
+COPY graphqlgateway ./graphqlgateway
 
 # Sync the Go workspace and download dependencies
 RUN go work sync && go mod download
@@ -19,6 +20,7 @@ RUN go work sync && go mod download
 RUN go build -o /app/bin/userservice ./userservice/cmd
 RUN go build -o /app/bin/orderservice ./orderservice/cmd
 RUN go build -o /app/bin/productservice ./productservice/cmd
+RUN go build -o /app/bin/graphqlgateway ./graphqlgateway/cmd
 
 # Stage 2: Create a minimal image for each service
 FROM golang:1.22-alpine AS userservice
@@ -26,8 +28,6 @@ WORKDIR /app
 COPY --from=builder /app/bin/userservice .
 RUN chmod +x ./userservice
 
-# Debug: List all files and directories before running the binary
-RUN echo "Listing files in /app directory for userservice:" && ls -l /app
 
 EXPOSE 8080
 CMD ["./userservice"]
@@ -37,8 +37,6 @@ WORKDIR /app
 COPY --from=builder /app/bin/orderservice .
 RUN chmod +x ./orderservice
 
-# Debug: List all files and directories before running the binary
-RUN echo "Listing files in /app directory for orderservice:" && ls -l /app
 
 EXPOSE 8080
 CMD ["./orderservice"]
@@ -48,8 +46,16 @@ WORKDIR /app
 COPY --from=builder /app/bin/productservice .
 RUN chmod +x ./productservice
 
-# Debug: List all files and directories before running the binary
-RUN echo "Listing files in /app directory for productservice:" && ls -l /app
 
 EXPOSE 8080
 CMD ["./productservice"]
+
+
+FROM golang:1.22-alpine AS graphqlgateway
+WORKDIR /app
+COPY --from=builder /app/bin/graphqlgateway .
+RUN chmod +x ./graphqlgateway
+
+
+EXPOSE 8080
+CMD ["./graphqlgateway"]
