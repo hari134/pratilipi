@@ -10,6 +10,7 @@ services:
       - ./userservice/.env
     depends_on:
       - userservice_db
+    restart: always
     ports:
       - "8081:8080"
     networks:
@@ -21,6 +22,7 @@ services:
       dockerfile: Dockerfile
       target: productservice
     container_name: productservice
+    restart: always
     env_file:
       - ./productservice/.env
     depends_on:
@@ -36,6 +38,7 @@ services:
       dockerfile: Dockerfile
       target: orderservice
     container_name: orderservice
+    restart: always
     env_file:
       - ./orderservice/.env
     depends_on:
@@ -52,6 +55,7 @@ services:
       dockerfile: Dockerfile
       target: graphqlgateway
     container_name: graphqlgateway
+    restart: always
     depends_on:
       - orderservice
       - productservice
@@ -70,6 +74,7 @@ services:
       POSTGRES_DB: userservice_db
     ports:
       - "5433:5432"
+    restart: always
     volumes:
       - userservice_db_data:/var/lib/postgresql/data
     networks:
@@ -88,6 +93,7 @@ services:
       - productservice_db_data:/var/lib/postgresql/data
     networks:
       - backend
+    restart: always
 
   orderservice_db:
     image: postgres:13
@@ -102,6 +108,7 @@ services:
       - orderservice_db_data:/var/lib/postgresql/data
     networks:
       - backend
+    restart: always
 
   zookeeper:
     image: bitnami/zookeeper:latest

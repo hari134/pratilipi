@@ -3826,7 +3826,11 @@ func (ec *executionContext) unmarshalInputOrderItemInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.ProductID = data
+			_tmp ,err := strconv.ParseInt(data,10,64)
+			if err!=nil{
+				return it,err
+			}
+			it.ProductID = _tmp
 		case "quantity":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
 			data, err := ec.unmarshalNInt2int(ctx, v)

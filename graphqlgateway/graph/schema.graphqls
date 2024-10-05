@@ -2,6 +2,7 @@ type User {
     userID: ID!
     name: String!
     email: String!
+    phoneNo : String!
 }
 
 type Product {
@@ -38,22 +39,25 @@ input RegisterInput {
     name: String!
     email: String!
     password: String!
+    phoneNo : String!
+    role : String!
 }
 
 input ProductInput {
     name: String!
+    description: String!
     price: Float!
-    inventoryCount: Int!
+    inventorycount: Int!
 }
 
 input OrderInput {
-    userID: ID!
     items: [OrderItemInput!]!
 }
 
 input OrderItemInput {
     productID: ID!
     quantity: Int!
+    priceAtOrder : Int!
 }
 
 type Mutation {

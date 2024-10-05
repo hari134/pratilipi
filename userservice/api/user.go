@@ -63,7 +63,7 @@ func (h *UserAPIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 
 	// Set default role if not provided
 	if user.Role == "" {
-		user.Role = "user"
+		user.Role = "admin"
 	}
 
 	// Insert the user into the database

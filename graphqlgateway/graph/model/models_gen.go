@@ -5,28 +5,31 @@ package model
 type Mutation struct {
 }
 
+
 type Order struct {
-	OrderID    string       `json:"orderID"`
-	UserID     string       `json:"userID"`
-	Items      []*OrderItem `json:"items"`
-	TotalPrice float64      `json:"totalPrice"`
-	Status     string       `json:"status"`
-	PlacedAt   string       `json:"placedAt"`
+    OrderID    string      `json:"orderID"`
+    UserID     string      `json:"userID"`
+    Items      []*OrderItem `json:"items"`
+    TotalPrice float64     `json:"totalPrice"`
+    Status     string      `json:"status"`
+    PlacedAt   string      `json:"placedAt"` // Should be a string representing a timestamp
 }
 
+
 type OrderInput struct {
-	UserID string            `json:"userID"`
+	UserID string            `json:"user_id"`
 	Items  []*OrderItemInput `json:"items"`
 }
 
 type OrderItem struct {
-	ProductID string `json:"productID"`
-	Quantity  int    `json:"quantity"`
+    ProductID string `json:"productID"` // Should be a string to match the GraphQL ID type
+    Quantity  int    `json:"quantity"`
 }
 
 type OrderItemInput struct {
-	ProductID string `json:"productID"`
+	ProductID int64 `json:"product_id"`
 	Quantity  int    `json:"quantity"`
+	PriceAtOrder float64 `json:"price_at_order"`
 }
 
 type Product struct {
@@ -42,7 +45,8 @@ type Product struct {
 type ProductInput struct {
 	Name           string  `json:"name"`
 	Price          float64 `json:"price"`
-	InventoryCount int     `json:"inventoryCount"`
+	InventoryCount int     `json:"InventoryCount"`
+	Description string `json:"description"`
 }
 
 type Query struct {
@@ -51,12 +55,15 @@ type Query struct {
 type RegisterInput struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
-	PhoneNo string `json:"phoneNo"`
+	PhoneNo  string   `json:"phone_no"`
 	Password string `json:"password"`
+	Role string `json:"role"`
 }
 
 type User struct {
 	UserID string `json:"userID"`
 	Name   string `json:"name"`
 	Email  string `json:"email"`
+	PhoneNo string `json:"phoneNo"`
+	Role string `json:"role"`
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,8 +24,9 @@ type ProductAPIHandler struct {
 // CreateProductHandler handles the creation of a new product and emits a ProductCreated event.
 func (h *ProductAPIHandler) CreateProductHandler(w http.ResponseWriter, r *http.Request) {
 	var product models.Product
-
+	
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
+		log.Println("marshalling error")
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -169,7 +171,7 @@ func (h *ProductAPIHandler) UpdateInventoryHandler(w http.ResponseWriter, r *htt
 func (h *ProductAPIHandler) GetProductByIdHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the product ID from the URL parameters
 	vars := mux.Vars(r)
-	productIDStr := vars["productID"]
+	productIDStr := vars["product_id"]
 
 	// Convert productID to int64
 	productID, err := strconv.ParseInt(productIDStr, 10, 64)

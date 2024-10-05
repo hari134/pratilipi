@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -24,7 +25,7 @@ type OrderHandler struct {
 // OrderRequest represents the payload for placing an order.
 type OrderRequest struct {
 	UserID string          `json:"user_id"`
-	Items  []OrderItemData `json:"items"`
+	Items  []*OrderItemData `json:"items"`
 }
 
 // OrderItemData represents an individual item in the order request.
@@ -43,15 +44,8 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
 	// Validate that the user exists in the users table
 	ctx := context.Background()
-	var user models.User
-	err := h.DB.NewSelect().Model(&user).Where("user_id = ?", orderReq.UserID).Scan(ctx)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
 
 	// Validate that products exist and check stock
 	for _, item := range orderReq.Items {
@@ -64,15 +58,20 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 
 		// Check if enough stock is available
 		if product.InventoryCount < item.Quantity {
+			fmt.Printf("Insufficient stock for product %d. Available: %d, Requested: %d",
+				product.ProductID, product.InventoryCount, item.Quantity)
 			http.Error(w, fmt.Sprintf("Insufficient stock for product %d. Available: %d, Requested: %d",
 				product.ProductID, product.InventoryCount, item.Quantity), http.StatusBadRequest)
 			return
 		}
 	}
-
+	userId, err := strconv.ParseInt(orderReq.UserID, 10, 64)
+	if err != nil {
+		panic(err)
+	}
 	// Create the order in the orders table
 	order := &models.Order{
-		UserID:    user.UserID,
+		UserID:     userId,
 		TotalPrice: calculateTotalPrice(orderReq.Items), // Calculate total price from items
 		Status:     "placed",
 		PlacedAt:   time.Now(),
@@ -88,9 +87,10 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 
 	// Create order items in the order_items table
 	var eventItems []messaging.OrderItem
+	var orderItemsArr []models.OrderItem
 	for _, item := range orderReq.Items {
 		orderItem := &models.OrderItem{
-			OrderID:      order.OrderID,  // Reference the order just created
+			OrderID:      order.OrderID, // Reference the order just created
 			ProductID:    item.ProductID,
 			Quantity:     item.Quantity,
 			PriceAtOrder: item.PriceAtOrder,
@@ -102,7 +102,7 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Failed to create order items", http.StatusInternalServerError)
 			return
 		}
-
+		orderItemsArr = append(orderItemsArr,*orderItem)
 		// Collect items for the event
 		eventItems = append(eventItems, messaging.OrderItem{
 			ProductID: item.ProductID,
@@ -127,9 +127,9 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 
 	// Emit "Order Placed" event
 	orderPlacedEvent := &messaging.OrderPlaced{
-		OrderID:    order.OrderID,
-		UserID:     order.UserID,
-		Items:      eventItems,
+		OrderID: order.OrderID,
+		UserID:  order.UserID,
+		Items:   eventItems,
 	}
 	err = h.Producer.EmitOrderPlacedEvent(orderPlacedEvent)
 	if err != nil {
@@ -139,93 +139,90 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Return success response
+	order.OrderItems = orderItemsArr
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(order)
 }
 
 // GetAllOrdersHandler handles the HTTP GET request to retrieve all orders with their items.
 func (h *OrderHandler) GetAllOrdersHandler(w http.ResponseWriter, r *http.Request) {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // Fetch all orders first
-    var orders []models.Order
-    err := h.DB.NewSelect().Model(&orders).Order("placed_at DESC").Scan(ctx)
-    if err != nil {
-        log.Printf("Failed to retrieve orders: %v", err)
-        http.Error(w, "Failed to retrieve orders", http.StatusInternalServerError)
-        return
-    }
+	// Fetch all orders first
+	var orders []models.Order
+	err := h.DB.NewSelect().Model(&orders).Order("placed_at DESC").Scan(ctx)
+	if err != nil {
+		log.Printf("Failed to retrieve orders: %v", err)
+		http.Error(w, "Failed to retrieve orders", http.StatusInternalServerError)
+		return
+	}
 
-    // Create a map to hold the orders and their items
-    ordersWithItems := make([]struct {
-        Order     models.Order
-        OrderItems []models.OrderItem
-    }, len(orders))
+	// Create a map to hold the orders and their items
+	ordersWithItems := make([]struct {
+		Order      models.Order
+		OrderItems []models.OrderItem
+	}, len(orders))
 
-    // For each order, fetch its associated order items
-    for i, order := range orders {
-        ordersWithItems[i].Order = order
+	// For each order, fetch its associated order items
+	for i, order := range orders {
+		ordersWithItems[i].Order = order
 
-        var orderItems []models.OrderItem
-        err := h.DB.NewSelect().Model(&orderItems).Where("order_id = ?", order.OrderID).Scan(ctx)
-        if err != nil {
-            log.Printf("Failed to retrieve items for order %d: %v", order.OrderID, err)
-            http.Error(w, "Failed to retrieve order items", http.StatusInternalServerError)
-            return
-        }
+		var orderItems []models.OrderItem
+		err := h.DB.NewSelect().Model(&orderItems).Where("order_id = ?", order.OrderID).Scan(ctx)
+		if err != nil {
+			log.Printf("Failed to retrieve items for order %d: %v", order.OrderID, err)
+			http.Error(w, "Failed to retrieve order items", http.StatusInternalServerError)
+			return
+		}
 
-        ordersWithItems[i].OrderItems = orderItems
-    }
+		ordersWithItems[i].OrderItems = orderItems
+	}
 
-    // Return the list of orders with items
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(ordersWithItems)
+	// Return the list of orders with items
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ordersWithItems)
 }
-
-
 
 // GetOrderByIDHandler handles the HTTP GET request to retrieve a specific order by its ID with its items.
 func (h *OrderHandler) GetOrderByIDHandler(w http.ResponseWriter, r *http.Request) {
-    ctx := context.Background()
-    vars := mux.Vars(r)
-    orderID := vars["order_id"]
+	ctx := context.Background()
+	vars := mux.Vars(r)
+	orderID := vars["order_id"]
 
-    // Fetch the order
-    var order models.Order
-    err := h.DB.NewSelect().
-        Model(&order).
-        Where("order_id = ?", orderID).
-        Scan(ctx)
-    if err != nil {
-        log.Printf("Failed to retrieve order with ID %s: %v", orderID, err)
-        http.Error(w, "Order not found", http.StatusNotFound)
-        return
-    }
+	// Fetch the order
+	var order models.Order
+	err := h.DB.NewSelect().
+		Model(&order).
+		Where("order_id = ?", orderID).
+		Scan(ctx)
+	if err != nil {
+		log.Printf("Failed to retrieve order with ID %s: %v", orderID, err)
+		http.Error(w, "Order not found", http.StatusNotFound)
+		return
+	}
 
-    // Fetch items associated with the order
-    var orderItems []models.OrderItem
-    err = h.DB.NewSelect().
-        Model(&orderItems).
-        Where("order_id = ?", order.OrderID).
-        Scan(ctx)
-    if err != nil {
-        log.Printf("Failed to retrieve items for order with ID %s: %v", orderID, err)
-        http.Error(w, "Failed to retrieve order items", http.StatusInternalServerError)
-        return
-    }
+	// Fetch items associated with the order
+	var orderItems []models.OrderItem
+	err = h.DB.NewSelect().
+		Model(&orderItems).
+		Where("order_id = ?", order.OrderID).
+		Scan(ctx)
+	if err != nil {
+		log.Printf("Failed to retrieve items for order with ID %s: %v", orderID, err)
+		http.Error(w, "Failed to retrieve order items", http.StatusInternalServerError)
+		return
+	}
 
-    // Attach the items to the order
-    order.OrderItems = orderItems
+	// Attach the items to the order
+	order.OrderItems = orderItems
 
-    // Return the order with its items
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(order)
+	// Return the order with its items
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(order)
 }
 
-
-
 // calculateTotalPrice calculates the total price of the order based on the items.
-func calculateTotalPrice(items []OrderItemData) float64 {
+func calculateTotalPrice(items []*OrderItemData) float64 {
 	var totalPrice float64
 	for _, item := range items {
 		totalPrice += item.PriceAtOrder * float64(item.Quantity)

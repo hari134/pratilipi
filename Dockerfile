@@ -7,7 +7,11 @@ ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 WORKDIR /app
 
 # Copy the Go workspace and source code
-COPY go.work.docker ./go.work
+COPY go.work ./go.work
+COPY pkg ./pkg
+COPY go.mod ./go.mod
+COPY go.sum ./go.sum
+
 COPY userservice ./userservice
 COPY orderservice ./orderservice
 COPY productservice ./productservice
