@@ -30,10 +30,13 @@ type OrderItemInput struct {
 }
 
 type Product struct {
-	ProductID      string  `json:"productID"`
+	ProductID      string  `json:"productID"`       // ProductID should be a string for GraphQL ID type
 	Name           string  `json:"name"`
+	Description    string  `json:"description"`
 	Price          float64 `json:"price"`
 	InventoryCount int     `json:"inventoryCount"`
+	CreatedAt      string  `json:"createdAt"`       // Time is returned as string
+	UpdatedAt      string  `json:"updatedAt"`       // Time is returned as string
 }
 
 type ProductInput struct {

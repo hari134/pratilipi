@@ -143,57 +143,62 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(order)
 }
 
-// GetAllOrdersHandler handles the HTTP GET request to retrieve all orders.
+// GetAllOrdersHandler handles the HTTP GET request to retrieve all orders with their items.
 func (h *OrderHandler) GetAllOrdersHandler(w http.ResponseWriter, r *http.Request) {
     ctx := context.Background()
-    var orders []models.Order
+    var ordersWithItems []struct {
+        Order     models.Order     `bun:"table:orders"`
+        OrderItem models.OrderItem `bun:"rel:has-many,join:order_id=order_id"`
+    }
 
-    // Fetch all orders from the database
-    err := h.DB.NewSelect().Model(&orders).Order("placed_at DESC").Scan(ctx)
+    // Perform a join query to get all orders and their associated items
+    err := h.DB.NewSelect().
+        Model(&ordersWithItems).
+        Relation("OrderItem").
+        Order("orders.placed_at DESC").
+        Scan(ctx)
+
     if err != nil {
-        log.Printf("Failed to retrieve orders: %v", err)
+        log.Printf("Failed to retrieve orders with items: %v", err)
         http.Error(w, "Failed to retrieve orders", http.StatusInternalServerError)
         return
     }
 
-    // Return the list of orders
+    // Return the list of orders with items
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(orders)
+    json.NewEncoder(w).Encode(ordersWithItems)
 }
 
-// GetOrderByIDHandler handles the HTTP GET request to retrieve a specific order by its ID.
+
+// GetOrderByIDHandler handles the HTTP GET request to retrieve a specific order by its ID with its items.
 func (h *OrderHandler) GetOrderByIDHandler(w http.ResponseWriter, r *http.Request) {
     ctx := context.Background()
     vars := mux.Vars(r)
     orderID := vars["order_id"]
 
-    var order models.Order
-    // Fetch the order by ID from the database
-    err := h.DB.NewSelect().Model(&order).Where("order_id = ?", orderID).Scan(ctx)
+    var orderWithItems struct {
+        Order     models.Order     `bun:"table:orders"`
+        OrderItem []models.OrderItem `bun:"rel:has-many,join:order_id=order_id"`
+    }
+
+    // Perform a join query to get the order and its associated items
+    err := h.DB.NewSelect().
+        Model(&orderWithItems).
+        Relation("OrderItem").
+        Where("orders.order_id = ?", orderID).
+        Scan(ctx)
+
     if err != nil {
         log.Printf("Failed to retrieve order with ID %s: %v", orderID, err)
         http.Error(w, "Order not found", http.StatusNotFound)
         return
     }
 
-    // Fetch the associated order items
-    var orderItems []models.OrderItem
-    err = h.DB.NewSelect().Model(&orderItems).Where("order_id = ?", order.OrderID).Scan(ctx)
-    if err != nil {
-        log.Printf("Failed to retrieve items for order with ID %s: %v", orderID, err)
-        http.Error(w, "Failed to retrieve order items", http.StatusInternalServerError)
-        return
-    }
-
     // Return the order with its items
-    response := map[string]interface{}{
-        "order":       order,
-        "order_items": orderItems,
-    }
-
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(response)
+    json.NewEncoder(w).Encode(orderWithItems)
 }
+
 
 // calculateTotalPrice calculates the total price of the order based on the items.
 func calculateTotalPrice(items []OrderItemData) float64 {
