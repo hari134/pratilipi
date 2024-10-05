@@ -58,7 +58,7 @@ func main() {
 	kafkaConsumerConfig := kafka.NewKafkaConfig().
 		SetBrokers("kafka:9092").
 		SetGroupID("orderservice-group").
-		SetGroupTopics("user-registered", "product-created", "order-placed") // Multiple topics
+		SetGroupTopics("user-registered", "product-created","inventory-updated") // Multiple topics
 
 	kafkaConsumer := kafka.NewKafkaConsumer(kafkaConsumerConfig)
 

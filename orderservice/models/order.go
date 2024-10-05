@@ -16,6 +16,7 @@ type Order struct {
     Status     string    `bun:"status,notnull"`             // Order status: placed, shipped, completed, etc.
     PlacedAt   time.Time `bun:"placed_at,default:current_timestamp"`  // Timestamp when the order was placed
     UpdatedAt  time.Time `bun:"updated_at,default:current_timestamp"` // Timestamp for the last update
+    OrderItems []OrderItem   `bun:"-"`
 }
 
 

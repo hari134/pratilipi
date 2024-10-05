@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/hari134/pratilipi/pkg/db"
@@ -14,6 +15,7 @@ import (
 	"github.com/hari134/pratilipi/userservice/middleware"
 	"github.com/hari134/pratilipi/userservice/models"
 	"github.com/hari134/pratilipi/userservice/producer"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // UserAPIHandler holds dependencies for the user API routes.
@@ -22,12 +24,41 @@ type UserAPIHandler struct {
 	KafkaProducer *producer.ProducerManager
 }
 
-// CreateUserHandler handles HTTP POST requests to create a new user and emits an event.
+// UserRequest represents the incoming payload for creating a user, including the plain password.
+type UserRequest struct {
+	Name     string `json:"name"`
+	PhoneNo  string `json:"phone_no"`
+	Email    string `json:"email"`
+	Password string `json:"password"`  // Plain password
+	Role     string `json:"role"`
+}
+
+// CreateUserHandler handles HTTP POST requests to create a new user and stores a hashed password.
 func (h *UserAPIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var userReq UserRequest
+
+	// Decode the incoming request body into UserRequest struct
+	if err := json.NewDecoder(r.Body).Decode(&userReq); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
+	}
+
+	// Hash the user's password
+	hashedPassword, err := hashPassword(userReq.Password)
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare the user model to be inserted into the database
+	user := models.User{
+		Name:         userReq.Name,
+		PhoneNo:      userReq.PhoneNo,
+		Email:        userReq.Email,
+		PasswordHash: hashedPassword,
+		Role:         userReq.Role,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	// Set default role if not provided
@@ -35,8 +66,9 @@ func (h *UserAPIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 		user.Role = "user"
 	}
 
+	// Insert the user into the database
 	ctx := context.Background()
-	_, err := h.DB.NewInsert().Model(&user).Exec(ctx)
+	_, err = h.DB.NewInsert().Model(&user).Exec(ctx)
 	if err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
@@ -54,8 +86,19 @@ func (h *UserAPIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Respond with the created user
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(user)
+}
+
+// hashPassword hashes a plain password using bcrypt.
+func hashPassword(password string) (string, error) {
+	// Use bcrypt to generate a hashed password
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }
 
 func (h *UserAPIHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {

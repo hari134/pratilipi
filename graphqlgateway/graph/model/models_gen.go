@@ -51,6 +51,7 @@ type Query struct {
 type RegisterInput struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
+	PhoneNo string `json:"phoneNo"`
 	Password string `json:"password"`
 }
 
