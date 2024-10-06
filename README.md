@@ -31,6 +31,7 @@ This project consists of multiple microservices, each handling specific function
 ## Technologies Used
 
 - **Go (Golang)**: Backend for all microservices.
+- **Kafka**: As a event stream for stream management.
 - **PostgreSQL**: For persistent data storage.
 - **GraphQL**: API for flexible data querying.
 - **JWT**: For secure authentication and authorization.
@@ -40,9 +41,7 @@ This project consists of multiple microservices, each handling specific function
 
 Ensure the following are installed:
 
-- **Go**: Version 1.17 or later.
 - **Docker**: Version 19 or later.
-- **PostgreSQL**: Required for service databases.
 
 ## Getting Started
 
