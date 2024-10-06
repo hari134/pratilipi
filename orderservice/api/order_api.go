@@ -90,7 +90,7 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 	var orderItemsArr []models.OrderItem
 	for _, item := range orderReq.Items {
 		orderItem := &models.OrderItem{
-			OrderID:      order.OrderID, // Reference the order just created
+			OrderID:      order.OrderID,
 			ProductID:    item.ProductID,
 			Quantity:     item.Quantity,
 			PriceAtOrder: item.PriceAtOrder,
@@ -109,7 +109,6 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 			Quantity:  item.Quantity,
 		})
 
-		// Update the product stock
 		product := &models.Product{
 			ProductID: item.ProductID,
 		}
@@ -125,7 +124,6 @@ func (h *OrderHandler) PlaceOrderHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	// Emit "Order Placed" event
 	orderPlacedEvent := &messaging.OrderPlaced{
 		OrderID: order.OrderID,
 		UserID:  order.UserID,
@@ -157,13 +155,11 @@ func (h *OrderHandler) GetAllOrdersHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Create a map to hold the orders and their items
 	ordersWithItems := make([]struct {
 		Order      models.Order
 		OrderItems []models.OrderItem
 	}, len(orders))
 
-	// For each order, fetch its associated order items
 	for i, order := range orders {
 		ordersWithItems[i].Order = order
 
@@ -178,7 +174,6 @@ func (h *OrderHandler) GetAllOrdersHandler(w http.ResponseWriter, r *http.Reques
 		ordersWithItems[i].OrderItems = orderItems
 	}
 
-	// Return the list of orders with items
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ordersWithItems)
 }
@@ -189,7 +184,6 @@ func (h *OrderHandler) GetOrderByIDHandler(w http.ResponseWriter, r *http.Reques
 	vars := mux.Vars(r)
 	orderID := vars["order_id"]
 
-	// Fetch the order
 	var order models.Order
 	err := h.DB.NewSelect().
 		Model(&order).
@@ -201,7 +195,6 @@ func (h *OrderHandler) GetOrderByIDHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Fetch items associated with the order
 	var orderItems []models.OrderItem
 	err = h.DB.NewSelect().
 		Model(&orderItems).
@@ -213,10 +206,8 @@ func (h *OrderHandler) GetOrderByIDHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Attach the items to the order
 	order.OrderItems = orderItems
 
-	// Return the order with its items
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(order)
 }

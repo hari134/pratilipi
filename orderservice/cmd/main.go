@@ -36,25 +36,20 @@ func main() {
 		SSLMode:  "disable",
 	})
 
-	// Initialize Kafka producer
 	kafkaConfig := kafka.NewKafkaConfig().
 		SetBrokers(kafkaBrokers)
 
 	kafkaProducer := kafka.NewKafkaProducer(kafkaConfig)
 
-	// Initialize ProducerManager
 	producerManager := producer.NewProducerManager(kafkaProducer)
 
-	// Create API handlers
 	orderAPIHandler := &api.OrderHandler{
 		DB:       dbInstance,
 		Producer: producerManager,
 	}
 
-	// Run DB migrations
 	migrations.RunMigrations(dbInstance)
 
-	// Initialize Kafka consumer
 	kafkaConsumerConfig := kafka.NewKafkaConfig().
 		SetBrokers("kafka:9092").
 		SetGroupID("orderservice-group").
@@ -62,14 +57,11 @@ func main() {
 
 	kafkaConsumer := kafka.NewKafkaConsumer(kafkaConsumerConfig)
 
-	// Initialize ConsumerManager
 	consumerManager := consumer.NewConsumerManager(kafkaConsumer, dbInstance)
 
-	// Register event types for dynamic handling
 	kafkaConsumer.RegisterType("user-registered", &messaging.UserRegistered{})
 	kafkaConsumer.RegisterType("product-created", &messaging.ProductCreated{})
 
-	// Start listening to "User Registered" and "Product Created" events in separate goroutines
 
 	go consumerManager.StartConsumers("user-registered","product-created")
 
@@ -83,7 +75,6 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+serverPort, r))
 }
 
-// Utility function to convert string to int, with a default value fallback
 func stringToInt(s string, defaultVal int) int {
 	if i, err := strconv.Atoi(s); err == nil {
 		return i
