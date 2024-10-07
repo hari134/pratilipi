@@ -60,7 +60,22 @@ To start the entire system:
     docker compose up --build
     ```
 
-3. Access the GraphQL Playground at [http://localhost:8084](http://localhost:8084).
+3. Create the kafka topics:
+
+    ```bash
+    docker exec -it kafka /bin/bash
+
+    kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic user-registered
+
+
+    kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic product-created
+
+    kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-placed
+
+
+    kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic inventory-updated
+    ```
+4. Access the GraphQL Playground at [http://localhost:8084](http://localhost:8084).
 
 ## Microservices List
 
